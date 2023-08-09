@@ -89,6 +89,7 @@ public class ParticipationServiceImpl implements IParticipationService{
             participation1.setQuizParticipation(quizRepository.findByIdQuiz(quizRepository.findAll().get((int)(idQuiz-1)).getIdQuiz()));
             participation1.setScore(0);
             participation1.setNiveau(1);
+            participation1.setTerminer(false);
             participationRepository.save(participation1);
 //          les questions a afficher
             Question question = quizRepository.findByIdQuiz(quizRepository.findAll().get((int)(idQuiz-1)).getIdQuiz()).getQuestionQuiz().get(0);
@@ -101,9 +102,13 @@ public class ParticipationServiceImpl implements IParticipationService{
             });
             return listQuestionReponse;
         }else {
+            List<String> listQuestionReponse = new ArrayList<>();
+            if (participation.isTerminer()){
+                listQuestionReponse.add("Le jeu est déjà terminé");
+                return listQuestionReponse;
+            }
             Question question = quizRepository.findByIdQuiz(quizRepository.findAll().get((int)(idQuiz-1)).getIdQuiz())
                     .getQuestionQuiz().get(participation.getNiveau()-1);
-            List<String> listQuestionReponse = new ArrayList<>();
             listQuestionReponse.add("Sélectionner un numéro pour la bonne réponse");
             listQuestionReponse.add(question.getTexte());
             listQuestionReponse.add("====================================================");
@@ -117,8 +122,18 @@ public class ParticipationServiceImpl implements IParticipationService{
     @Override
     public List<String> verificationDesReponse(Long idUser, Long idQuiz, int choix) {
         Participation participation = participationRepository.findByUtilisateurParticipationIdUserAndQuizParticipationIdQuiz(idUser,idQuiz);
+        if (participation.isTerminer()){
+            List<String>  listReponse = new ArrayList<>();
+            listReponse.add("Le jeu est déjà terminé");
+            return listReponse;
+        }
         Question question = quizRepository.findByIdQuiz(quizRepository.findAll().get((int)(idQuiz-1)).getIdQuiz())
                 .getQuestionQuiz().get(participation.getNiveau()-1);
+        if (choix <= 0 || choix > question.getReponseQuestion().size()){
+            List<String>  listReponse = new ArrayList<>();
+            listReponse.add("Veuillez choisir un numero correct");
+            return listReponse;
+        }
         Reponse reponse = question.getReponseQuestion().get(choix-1);
         List<String>  listReponse = new ArrayList<>();
         if (reponse.getBonneReponse().equals("Vrai")){
@@ -141,6 +156,7 @@ public class ParticipationServiceImpl implements IParticipationService{
                 return listReponse;
             }else {
                 participation.setScore(participation.getScore()+10);
+                participation.setTerminer(true);
                 participationRepository.save(participation);
                 listReponse.add("Félicitations vous avez trouvé la bonne réponse");
                 listReponse.add("Jeu terminé !!!");
@@ -169,6 +185,8 @@ public class ParticipationServiceImpl implements IParticipationService{
                 });
                 return listReponse;
             }else {
+                participation.setTerminer(true);
+                participationRepository.save(participation);
                 question.getReponseQuestion().forEach(reponse1 -> {
                     if (reponse1.getBonneReponse().equals("Vrai")){
                         listReponse.add("Vous n'avez pas trouvé la bonne réponse");

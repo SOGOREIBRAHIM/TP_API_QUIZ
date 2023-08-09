@@ -27,6 +27,9 @@ public class Participation {
     @Max(value = 50, message = "Vous ne pouvez pas depasser 50 niveau")
     private int niveau;
 
+    @Column(name = "terminer")
+    private boolean terminer;
+
     @ManyToOne
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Utilisateur utilisateurParticipation;
